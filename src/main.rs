@@ -5,8 +5,12 @@ use ggez::nalgebra as na;
 use ggez::input::keyboard;
 use ggez::{Context, GameResult};
 
-static PADDLE_HEIGHT: f32 = 100.0;
-static PADDLE_WIDTH: f32 = 20.0;
+// resolution requires 4* expected pixel size, not sure why :)
+static WINDOW_HEIGHT: f32 = 400.0 * 2.0;
+static WINDOW_WIDTH: f32 = 800.0 * 2.0;
+static PADDLE_HEIGHT: f32 = 200.0;
+static PADDLE_WIDTH: f32 = 40.0;
+static PADDLE_SPEED: f32 = 5.0;
 
 #[derive(PartialEq)]
 enum PlayerID {
@@ -32,7 +36,7 @@ struct Ball {
 
 impl Ball {
     fn new() -> GameResult<Ball> {
-        let b = Ball { pos_x: 180.0, pos_y: 150.0, vel_x: 5.0, vel_y: 0.5, radius: 10.0 };
+        let b = Ball { pos_x: WINDOW_WIDTH / 2.0, pos_y: WINDOW_HEIGHT / 2.0, vel_x: 0.0, vel_y: 0.0, radius: 10.0 };
         Ok(b)
     }
 }
@@ -45,13 +49,13 @@ impl Player {
         if id == PlayerID::Player1 {
             key_up = KeyCode::W;
             key_down = KeyCode::S;
-            start_x = 15.0;
+            start_x = 40.0;
         } else {
             key_up = KeyCode::Up;
             key_down = KeyCode::Down;
-            start_x = 375.0;
+            start_x = WINDOW_WIDTH - PADDLE_WIDTH;
         }
-        let p = Player {player_id: id, pos_x: start_x, pos_y: 160.0 - PADDLE_HEIGHT / 2.0 , key_up, key_down};
+        let p = Player {player_id: id, pos_x: start_x, pos_y: WINDOW_HEIGHT / 2.0 - PADDLE_HEIGHT / 2.0 , key_up, key_down};
         Ok(p)
     }
 }
@@ -96,20 +100,21 @@ impl MainState {
 impl EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         if keyboard::is_key_pressed(ctx, self.player1.key_down) {
-            self.player1.pos_y += 2.0;
+            self.player1.pos_y += PADDLE_SPEED;
         } else if keyboard::is_key_pressed(ctx, self.player1.key_up) {
-            self.player1.pos_y -= 2.0;
+            self.player1.pos_y -= PADDLE_SPEED;
         }
         if keyboard::is_key_pressed(ctx, self.player2.key_down) {
-            self.player2.pos_y += 2.0;
+            self.player2.pos_y += PADDLE_SPEED;
         } else if keyboard::is_key_pressed(ctx, self.player2.key_up) {
-            self.player2.pos_y -= 2.0;
+            self.player2.pos_y -= PADDLE_SPEED;
         }
+
         // TODO: Check for collisions with Window
         if self.ball.pos_y <= 0.0 {
             self.ball.vel_y *= -1.0;
         }
-        if self.ball.pos_y >= 300.0 {
+        if self.ball.pos_y >= WINDOW_HEIGHT {
             self.ball.vel_y *= -1.0;
         }
 
@@ -128,7 +133,6 @@ impl EventHandler for MainState {
         self.ball.pos_x += self.ball.vel_x;
         self.ball.pos_y += self.ball.vel_y;
 
-        //TODO: Add ball physics
         Ok(())
     }
 
@@ -168,10 +172,13 @@ impl EventHandler for MainState {
 }
 
 pub fn main() -> GameResult {
-    // TODO: Set Window config correctly if time
     let cb = ggez::ContextBuilder::new("rong", "young_guns")
-        .window_setup(ggez::conf::WindowSetup::default().title("rong!"));
+        .window_setup(ggez::conf::WindowSetup::default().title("rong!"))
+        .window_mode(ggez::conf::WindowMode::default().dimensions(WINDOW_WIDTH, WINDOW_HEIGHT));
     let (ctx, event_loop) = &mut cb.build()?;
+    let window_size = graphics::Rect::new(0.0, 0.0, WINDOW_WIDTH * 2.0, WINDOW_HEIGHT * 2.0);
+    graphics::set_screen_coordinates(ctx, window_size)?;
+
     let p1 = Player::new(PlayerID::Player1)?;
     let p2 = Player::new(PlayerID::Player2)?;
     let ball = Ball::new()?;
