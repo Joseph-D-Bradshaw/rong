@@ -36,7 +36,7 @@ struct Ball {
 
 impl Ball {
     fn new() -> GameResult<Ball> {
-        let b = Ball { pos_x: WINDOW_WIDTH / 2.0, pos_y: WINDOW_HEIGHT / 2.0, vel_x: 0.0, vel_y: 0.0, radius: 10.0 };
+        let b = Ball { pos_x: WINDOW_WIDTH / 2.0, pos_y: WINDOW_HEIGHT / 2.0, vel_x: 5.0, vel_y: 1.0, radius: 10.0 };
         Ok(b)
     }
 }
@@ -77,17 +77,16 @@ impl MainState {
     }
 
     fn check_paddle_collisions(&self, player_id: PlayerID) -> bool {
-        if player_id == PlayerID::Player2 {
-            if self.ball.pos_x >= self.player2.pos_x && self.ball.pos_x <= self.player2.pos_x + PADDLE_WIDTH {
-                if self.ball.pos_y >= self.player2.pos_y && self.ball.pos_y <= self.player2.pos_y + PADDLE_HEIGHT  {
+        if player_id == PlayerID::Player1 {
+            if self.ball.pos_x >= self.player1.pos_x && self.ball.pos_x <= self.player1.pos_x + PADDLE_WIDTH / 2.0 {
+                if self.ball.pos_y >= self.player1.pos_y && self.ball.pos_y <= self.player1.pos_y + PADDLE_HEIGHT {
                     return true;
                 }
             }
         }
-
-        if player_id == PlayerID::Player1 {
-            if self.ball.pos_x >= self.player1.pos_x && self.ball.pos_x <= self.player1.pos_x + PADDLE_WIDTH {
-                if self.ball.pos_y >= self.player1.pos_y && self.ball.pos_y <= self.player1.pos_y + PADDLE_HEIGHT {
+        if player_id == PlayerID::Player2 {
+            if self.ball.pos_x >= self.player2.pos_x && self.ball.pos_x <= self.player2.pos_x + PADDLE_WIDTH {
+                if self.ball.pos_y >= self.player2.pos_y && self.ball.pos_y <= self.player2.pos_y + PADDLE_HEIGHT  {
                     return true;
                 }
             }
@@ -99,6 +98,7 @@ impl MainState {
 // event::EventHandler is a trait which defines what functionality the type (MainState) must provide (here it is update and draw)
 impl EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
+        // Movement
         if keyboard::is_key_pressed(ctx, self.player1.key_down) {
             self.player1.pos_y += PADDLE_SPEED;
         } else if keyboard::is_key_pressed(ctx, self.player1.key_up) {
@@ -110,7 +110,7 @@ impl EventHandler for MainState {
             self.player2.pos_y -= PADDLE_SPEED;
         }
 
-        // TODO: Check for collisions with Window
+        // Collision Checks
         if self.ball.pos_y <= 0.0 {
             self.ball.vel_y *= -1.0;
         }
@@ -118,8 +118,6 @@ impl EventHandler for MainState {
             self.ball.vel_y *= -1.0;
         }
 
-
-        // TODO: Paddle collisions seems slightly offset
         if self.check_paddle_collisions(PlayerID::Player1) {
             if self.ball.vel_x < 0.0 {
                 self.ball.vel_x *= -1.0;
@@ -162,9 +160,13 @@ impl EventHandler for MainState {
             graphics::WHITE
         )?;
 
+        let (mid_top, mid_bot) = (na::Point2::new(WINDOW_WIDTH / 2.0, 0.0 - WINDOW_HEIGHT / 2.0), na::Point2::new(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT * 2.0));
+        let mid_line = graphics::Mesh::new_line(ctx, &[mid_top, mid_bot], 3.0, graphics::WHITE)?;
+
         graphics::draw(ctx, &paddle1, (na::Point2::new(self.player1.pos_x, self.player1.pos_y),))?;
         graphics::draw(ctx, &paddle2, (na::Point2::new(self.player2.pos_x, self.player2.pos_y),))?;
         graphics::draw(ctx, &ball, (na::Point2::new(self.ball.pos_x, self.ball.pos_y),))?;
+        graphics::draw(ctx, &mid_line, (na::Point2::new(WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0),))?;
 
         graphics::present(ctx)?;
         Ok(())
