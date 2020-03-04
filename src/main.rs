@@ -63,7 +63,9 @@ impl Player {
 struct MainState {
     player1: Player,
     player2: Player,
-    ball: Ball
+    ball: Ball,
+    player1_score: i32,
+    player2_score: i32
 }
 
 impl MainState {
@@ -71,7 +73,9 @@ impl MainState {
         let s = MainState {
             player1: player1,
             player2: player2,
-            ball: ball
+            ball: ball,
+            player1_score: 0,
+            player2_score: 0
         };
         Ok(s)
     }
@@ -93,6 +97,12 @@ impl MainState {
         }
         return false;
     }
+
+    fn reset_ball(&mut self) {
+        self.ball.pos_x = WINDOW_WIDTH / 2.0;
+        self.ball.pos_y = WINDOW_HEIGHT / 2.0;
+        self.ball.vel_x *= -1.0;
+    }
 }
 
 // event::EventHandler is a trait which defines what functionality the type (MainState) must provide (here it is update and draw)
@@ -110,7 +120,7 @@ impl EventHandler for MainState {
             self.player2.pos_y -= PADDLE_SPEED;
         }
 
-        // Collision Checks
+        // Window Ball Collision Checks
         if self.ball.pos_y <= 0.0 {
             self.ball.vel_y *= -1.0;
         }
@@ -118,6 +128,17 @@ impl EventHandler for MainState {
             self.ball.vel_y *= -1.0;
         }
 
+        if self.ball.pos_x >= WINDOW_WIDTH {
+            self.player1_score += 1;
+            self.reset_ball();
+        }
+
+        if self.ball.pos_x <= 0.0 {
+            self.player2_score += 1;
+            self.reset_ball();
+        }
+
+        // Paddle Collision Checks
         if self.check_paddle_collisions(PlayerID::Player1) {
             if self.ball.vel_x < 0.0 {
                 self.ball.vel_x *= -1.0;
@@ -163,10 +184,15 @@ impl EventHandler for MainState {
         let (mid_top, mid_bot) = (na::Point2::new(WINDOW_WIDTH / 2.0, 0.0 - WINDOW_HEIGHT / 2.0), na::Point2::new(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT * 2.0));
         let mid_line = graphics::Mesh::new_line(ctx, &[mid_top, mid_bot], 3.0, graphics::WHITE)?;
 
+        let player1_score = graphics::Text::new(self.player1_score.to_string());
+        let player2_score = graphics::Text::new(self.player2_score.to_string());
+
         graphics::draw(ctx, &paddle1, (na::Point2::new(self.player1.pos_x, self.player1.pos_y),))?;
         graphics::draw(ctx, &paddle2, (na::Point2::new(self.player2.pos_x, self.player2.pos_y),))?;
         graphics::draw(ctx, &ball, (na::Point2::new(self.ball.pos_x, self.ball.pos_y),))?;
         graphics::draw(ctx, &mid_line, (na::Point2::new(WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0),))?;
+        graphics::draw(ctx, &player1_score, (na::Point2::new(WINDOW_WIDTH / 2.0 - 50.0, 50.0), ))?;
+        graphics::draw(ctx, &player2_score, (na::Point2::new(WINDOW_WIDTH / 2.0 + 50.0, 50.0), ))?;
 
         graphics::present(ctx)?;
         Ok(())
