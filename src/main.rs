@@ -1,6 +1,7 @@
 use ggez;
 use ggez::event::{self, EventHandler, KeyCode};
 use ggez::graphics;
+use ggez::graphics::{Color, Font, Scale, TextFragment, Text};
 use ggez::nalgebra as na;
 use ggez::input::keyboard;
 use ggez::{Context, GameResult};
@@ -10,7 +11,7 @@ static WINDOW_HEIGHT: f32 = 400.0 * 2.0;
 static WINDOW_WIDTH: f32 = 800.0 * 2.0;
 static PADDLE_HEIGHT: f32 = 200.0;
 static PADDLE_WIDTH: f32 = 40.0;
-static PADDLE_SPEED: f32 = 5.0;
+static PADDLE_SPEED: f32 = 6.0;
 
 #[derive(PartialEq)]
 enum PlayerID {
@@ -36,7 +37,7 @@ struct Ball {
 
 impl Ball {
     fn new() -> GameResult<Ball> {
-        let b = Ball { pos_x: WINDOW_WIDTH / 2.0, pos_y: WINDOW_HEIGHT / 2.0, vel_x: 5.0, vel_y: 1.0, radius: 10.0 };
+        let b = Ball { pos_x: WINDOW_WIDTH / 2.0, pos_y: WINDOW_HEIGHT / 2.0, vel_x: 12.0, vel_y: 1.0, radius: 10.0 };
         Ok(b)
     }
 }
@@ -83,14 +84,14 @@ impl MainState {
     fn check_paddle_collisions(&self, player_id: PlayerID) -> bool {
         if player_id == PlayerID::Player1 {
             if self.ball.pos_x >= self.player1.pos_x && self.ball.pos_x <= self.player1.pos_x + PADDLE_WIDTH / 2.0 {
-                if self.ball.pos_y >= self.player1.pos_y && self.ball.pos_y <= self.player1.pos_y + PADDLE_HEIGHT {
+                if self.ball.pos_y >= self.player1.pos_y && self.ball.pos_y <= self.player1.pos_y + PADDLE_HEIGHT / 2.0 {
                     return true;
                 }
             }
         }
         if player_id == PlayerID::Player2 {
             if self.ball.pos_x >= self.player2.pos_x && self.ball.pos_x <= self.player2.pos_x + PADDLE_WIDTH {
-                if self.ball.pos_y >= self.player2.pos_y && self.ball.pos_y <= self.player2.pos_y + PADDLE_HEIGHT  {
+                if self.ball.pos_y >= self.player2.pos_y && self.ball.pos_y <= self.player2.pos_y + PADDLE_HEIGHT / 2.0  {
                     return true;
                 }
             }
@@ -109,6 +110,8 @@ impl MainState {
 impl EventHandler for MainState {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         // Movement
+
+        
         if keyboard::is_key_pressed(ctx, self.player1.key_down) {
             self.player1.pos_y += PADDLE_SPEED;
         } else if keyboard::is_key_pressed(ctx, self.player1.key_up) {
@@ -142,11 +145,29 @@ impl EventHandler for MainState {
         if self.check_paddle_collisions(PlayerID::Player1) {
             if self.ball.vel_x < 0.0 {
                 self.ball.vel_x *= -1.0;
+                let offset: f32 =  self.ball.pos_y - (self.player1.pos_y + PADDLE_HEIGHT / 4.0);
+                let absolute_speed: f32 = self.ball.vel_x.abs() + self.ball.vel_y.abs();
+                self.ball.vel_y = absolute_speed * offset / 100.0;
+                if self.ball.vel_y > 5.0 {
+                    self.ball.vel_y = 5.0;
+                }
+                if self.ball.vel_y < -5.0 {
+                    self.ball.vel_y = -5.0;
+                }
             }
         }
         if self.check_paddle_collisions(PlayerID::Player2) {
             if self.ball.vel_x > 0.0 {
                 self.ball.vel_x *= -1.0;
+                let offset: f32 = self.ball.pos_y - (self.player2.pos_y + PADDLE_HEIGHT / 4.0);
+                let absolute_speed: f32 = self.ball.vel_x.abs() + self.ball.vel_y.abs();
+                self.ball.vel_y = absolute_speed * offset / 100.0;
+                if self.ball.vel_y > 5.0 {
+                    self.ball.vel_y = 5.0;
+                }
+                if self.ball.vel_y < -5.0 {
+                    self.ball.vel_y = -5.0;
+                }
             }
         }
         self.ball.pos_x += self.ball.vel_x;
@@ -156,7 +177,7 @@ impl EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        graphics::clear(ctx, [0.1, 0.2, 0.3, 1.0].into());
+        graphics::clear(ctx, [0.0, 0.0, 0.0, 1.0].into());
 
         let paddle1 = graphics::Mesh::new_rectangle(
             ctx,
@@ -184,15 +205,54 @@ impl EventHandler for MainState {
         let (mid_top, mid_bot) = (na::Point2::new(WINDOW_WIDTH / 2.0, 0.0 - WINDOW_HEIGHT / 2.0), na::Point2::new(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT * 2.0));
         let mid_line = graphics::Mesh::new_line(ctx, &[mid_top, mid_bot], 3.0, graphics::WHITE)?;
 
-        let player1_score = graphics::Text::new(self.player1_score.to_string());
-        let player2_score = graphics::Text::new(self.player2_score.to_string());
-
+        let mut player1_score_text = graphics::Text::new(TextFragment {
+            text: self.player1_score.to_string(),
+            color: Some(Color::new(1.0, 1.0, 1.0, 1.0)),
+            font: Some(Font::default()),
+            scale: Some(Scale::uniform(100.0))
+        });
+        let mut player2_score_text = graphics::Text::new(TextFragment {
+            text: self.player2_score.to_string(),
+            color: Some(Color::new(1.0, 1.0, 1.0, 1.0)),
+            font: Some(Font::default()),
+            scale: Some(Scale::uniform(100.0))
+        });
+        if self.player1_score > 7{
+            self.ball.vel_x = 0.0;
+            self.ball.vel_y = 0.0;
+             player1_score_text = graphics::Text::new(TextFragment {
+                text: "W".to_string(),
+                color: Some(Color::new(1.0, 1.0, 1.0, 1.0)),
+                font: Some(Font::default()),
+                scale: Some(Scale::uniform(100.0))
+            }); player2_score_text = graphics::Text::new(TextFragment {
+                text: "L".to_string(),
+                color: Some(Color::new(1.0, 1.0, 1.0, 1.0)),
+                font: Some(Font::default()),
+                scale: Some(Scale::uniform(100.0))
+            });
+        }
+        if self.player2_score > 7{
+            self.ball.vel_x = 0.0;
+            self.ball.vel_y = 0.0;
+             player1_score_text = graphics::Text::new(TextFragment {
+                text: "L".to_string(),
+                color: Some(Color::new(1.0, 1.0, 1.0, 1.0)),
+                font: Some(Font::default()),
+                scale: Some(Scale::uniform(100.0))
+            }); player2_score_text = graphics::Text::new(TextFragment {
+                text: "W".to_string(),
+                color: Some(Color::new(1.0, 1.0, 1.0, 1.0)),
+                font: Some(Font::default()),
+                scale: Some(Scale::uniform(100.0))
+            });
+        }
         graphics::draw(ctx, &paddle1, (na::Point2::new(self.player1.pos_x, self.player1.pos_y),))?;
         graphics::draw(ctx, &paddle2, (na::Point2::new(self.player2.pos_x, self.player2.pos_y),))?;
         graphics::draw(ctx, &ball, (na::Point2::new(self.ball.pos_x, self.ball.pos_y),))?;
-        graphics::draw(ctx, &mid_line, (na::Point2::new(WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0),))?;
-        graphics::draw(ctx, &player1_score, (na::Point2::new(WINDOW_WIDTH / 2.0 - 50.0, 50.0), ))?;
-        graphics::draw(ctx, &player2_score, (na::Point2::new(WINDOW_WIDTH / 2.0 + 50.0, 50.0), ))?;
+        graphics::draw(ctx, &mid_line, (na::Point2::new(WINDOW_WIDTH / 2.0, WINDOW_HEIGHT / 2.0),))?;
+        graphics::draw(ctx, &player1_score_text, (na::Point2::new(WINDOW_WIDTH - 150.0, 50.0), ))?;
+        graphics::draw(ctx, &player2_score_text, (na::Point2::new(WINDOW_WIDTH + 100.0, 50.0), ))?;
 
         graphics::present(ctx)?;
         Ok(())
