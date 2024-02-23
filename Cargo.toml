@@ -1,11 +1,11 @@
 [package]
-name = "hello-rust"
-version = "0.1.0"
+name = "rong"
+version = "0.1.1"
 authors = ["Joseph Bradshaw <joseph.bradshaw@statkraft.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ferris-says = "0.1"
-ggez = "0.5"
+ggez = "0.9.3"
+mint = "0.5.9"
