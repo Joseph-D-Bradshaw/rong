@@ -1,10 +1,10 @@
 use ggez;
 use ggez::event::{self, EventHandler};
-use ggez::graphics;
+// use ggez::graphics;
 use ggez::graphics::Canvas;
 use ggez::graphics::{Color, PxScale, TextFragment};
 use ggez::input::keyboard::KeyCode;
-use ggez::{Context, GameResult};
+use ggez::{graphics, Context, GameResult};
 use mint::Point2;
 
 // resolution requires 4* expected pixel size, not sure why :)
