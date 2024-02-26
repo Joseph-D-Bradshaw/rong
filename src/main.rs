@@ -1,6 +1,5 @@
 use ggez;
 use ggez::event::{self, EventHandler};
-// use ggez::graphics;
 use ggez::graphics::Canvas;
 use ggez::graphics::{Color, PxScale, TextFragment};
 use ggez::input::keyboard::KeyCode;
